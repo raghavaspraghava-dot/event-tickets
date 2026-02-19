@@ -155,12 +155,15 @@ def delete_event(event_id):
     
     if supabase:
         try:
+            # 1. DELETE related bookings FIRST
+            supabase.table('bookings').delete().eq('event_id', event_id).execute()
+            # 2. NOW delete event
             supabase.table('events').delete().eq('id', event_id).execute()
-            flash('✅ Event deleted!', 'success')
-        except:
-            flash('❌ Delete failed!', 'error')
+            flash('✅ Event + bookings deleted!', 'success')
+        except Exception as e:
+            flash(f'❌ Delete failed: {str(e)}', 'error')
     else:
-        flash('⚠️ No database connection!', 'error')
+        flash('⚠️ No database!', 'error')
     
     return redirect(url_for('admin_events'))
 
@@ -186,6 +189,7 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
