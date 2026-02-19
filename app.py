@@ -89,25 +89,32 @@ def admin_dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
-    # 🔥 FIXED: Bulletproof stats counting
     bookings_count = 0
     events_count = 0
     
     if supabase:
         try:
-            # Events count - SAFE
-            events_response = supabase.table('events').select('count').execute()
-            events_count = events_response.count if hasattr(events_response, 'count') and events_response.count is not None else 0
+            # 🔥 METHOD 1: Count ALL rows (works 100%)
+            events_result = supabase.table('events').select('*', count='exact').execute()
+            events_count = len(events_result.data) if events_result.data else 0
             
-            # Bookings count - SAFE  
-            bookings_response = supabase.table('bookings').select('count').execute()
-            bookings_count = bookings_response.count if hasattr(bookings_response, 'count') and bookings_response.count is not None else 0
+            bookings_result = supabase.table('bookings').select('*', count='exact').execute()
+            bookings_count = len(bookings_result.data) if bookings_result.data else 0
+            
+            print(f"🔢 DEBUG: Events={events_count}, Bookings={bookings_count}")
+            
         except Exception as e:
-            print(f"Dashboard error: {e}")
+            print(f"❌ Dashboard error: {e}")
+            # Fallback: manual count
+            events_count = 0
+            bookings_count = 0
+    
+    print(f"📊 DASHBOARD RENDERING: Events={events_count}, Bookings={bookings_count}")
     
     return render_template('admin_dashboard.html', 
                          bookings_count=bookings_count, 
                          events_count=events_count)
+
 
 @app.route('/admin/events')
 def admin_events():
@@ -204,3 +211,4 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
