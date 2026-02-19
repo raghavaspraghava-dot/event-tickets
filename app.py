@@ -121,8 +121,16 @@ def add_event():
         return redirect(url_for('admin_login'))
     
     try:
+        # AUTO-INCREMENT ID (1, 2, 3...)
+        if supabase:
+            # Get current max ID + 1
+            count_result = supabase.table('events').select('count').execute()
+            next_id = count_result.count + 1
+        else:
+            next_id = 1
+        
         event_data = {
-            'id': str(uuid.uuid4())[:8],
+            'id': next_id,  # 👈 CLEAN: 1, 2, 3, 4...
             'name': request.form['name'],
             'date': request.form['date'],
             'capacity': int(request.form['capacity']),
@@ -135,6 +143,7 @@ def add_event():
         flash(f'❌ Error: {str(e)}', 'error')
     
     return redirect(url_for('admin_events'))
+
 
 @app.route('/admin/events/delete/<event_id>')
 def delete_event(event_id):
@@ -174,3 +183,4 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
