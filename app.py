@@ -122,10 +122,9 @@ def add_event():
         return redirect(url_for('admin_login'))
     
     try:
-        # 🔥 PERFECT ID GENERATION - Finds highest existing ID + 1
+        # 🔥 BULLETPROOF ID GENERATION
         next_id = 1
         if supabase:
-            # Get ALL existing IDs and find max
             all_events = supabase.table('events').select('id').execute()
             if all_events.data:
                 existing_ids = [event['id'] for event in all_events.data]
@@ -141,7 +140,10 @@ def add_event():
         
         if supabase:
             supabase.table('events').insert(event_data).execute()
-        flash(f'✅ Event #{next_id} "{event_data["name"]}" added successfully!', 'success')
+        
+        # ✅ FIXED: Convert int to str with str()
+        flash(f'✅ Event #{str(next_id)} "{event_data["name"]}" added successfully!', 'success')
+        
     except Exception as e:
         flash(f'❌ Error: {str(e)}', 'error')
     
@@ -191,6 +193,7 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
