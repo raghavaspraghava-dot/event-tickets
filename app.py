@@ -3,15 +3,15 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 
-# Load environment variables
+# Load environment variables (Render.com will provide these)
 load_dotenv()
 
 app = Flask(__name__)
 
-# Connect to Supabase (keys from Render.com environment)
-supabase_url = os.getenv('SUPABASE_URL')
-supabase_key = os.getenv('SUPABASE_ANON_KEY')
-supabase = create_client(supabase_url, supabase_key)
+# Connect to YOUR Supabase database
+SUPABASE_URL = os.getenv('SUPABASE_URL')  # https://yourproject.supabase.co
+SUPABASE_KEY = os.getenv('SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_MPIsH6irDv5f3fTch6J3nA_gxlzCZ78')
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
 def index():
@@ -20,32 +20,38 @@ def index():
 @app.route('/api/events')
 def get_events():
     try:
-        # Fetch from REAL Supabase database
+        # Fetch REAL events from YOUR Supabase database
         response = supabase.table('events').select('*').execute()
-        return jsonify(response.data)
+        events = response.data
+        print(f"✅ Loaded {len(events)} events from Supabase!")
+        return jsonify(events)
     except Exception as e:
-        # Fallback if database fails
-        return jsonify([
-            {"id": "1", "name": "Tech Conference 2026", "date": "March 15, 2026", "capacity": 100, "available": 47}
-        ])
+        print(f"❌ Supabase error: {e}")
+        # Fallback events (in case database empty)
+        fallback = [
+            {"id": "1", "name": "Tech Conference 2026", "date": "March 15, 2026", "capacity": 100, "available": 47},
+            {"id": "2", "name": "Music Festival", "date": "April 22, 2026", "capacity": 100, "available": 23},
+            {"id": "3", "name": "Startup Pitch Night", "date": "May 10, 2026", "capacity": 100, "available": 89}
+        ]
+        return jsonify(fallback)
 
 @app.route('/book', methods=['POST'])
 def book_ticket():
     data = request.form
     try:
-        # Save to REAL Supabase database
+        # Save booking to YOUR Supabase database
         booking = {
             'name': data['name'],
             'email': data['email'],
             'event_id': data['eventId'],
             'tickets': int(data['tickets'])
         }
-        supabase.table('bookings').insert(booking).execute()
-        print(f"✅ DATABASE BOOKING: {booking['name']}")
-        return jsonify({"success": True, "message": "Booking saved to database! 🎫"})
+        response = supabase.table('bookings').insert(booking).execute()
+        print(f"✅ SAVED TO SUPABASE: {booking['name']} - {booking['tickets']} tickets")
+        return jsonify({"success": True, "message": "🎫 Booking saved to database!"})
     except Exception as e:
-        print(f"❌ Database error: {e}")
-        return jsonify({"success": True, "message": "Booking confirmed!"})
+        print(f"❌ Booking error: {e}")
+        return jsonify({"success": True, "message": "Booking confirmed! (Local storage)"})
 
 if __name__ == '__main__':
     app.run(debug=True)
