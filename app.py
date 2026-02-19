@@ -121,19 +121,16 @@ def add_event():
         return redirect(url_for('admin_login'))
     
     try:
-        # BULLETPROOF AUTO-INCREMENT ID
-        next_id = 1
+        # ULTRA-SAFE ID GENERATION
         if supabase:
-            try:
-                # Get current count safely
-                response = supabase.table('events').select('count').execute()
-                current_count = response.count if response.count is not None else 0
-                next_id = current_count + 1
-            except:
-                next_id = 1  # Fallback
+            # Find highest ID + 1 (or 1 if empty)
+            max_result = supabase.table('events').select('id', count='exact').order('id', desc=True).limit(1).execute()
+            next_id = max_result.count + 1 if max_result.count > 0 else 1
+        else:
+            next_id = 1
         
         event_data = {
-            'id': next_id,  # 👈 CLEAN: 1, 2, 3...
+            'id': next_id,
             'name': request.form['name'],
             'date': request.form['date'],
             'capacity': int(request.form['capacity']),
@@ -142,11 +139,12 @@ def add_event():
         
         if supabase:
             supabase.table('events').insert(event_data).execute()
-        flash('✅ Event added successfully! ID: ' + str(next_id), 'success')
+        flash(f'✅ Event #{next_id} added!', 'success')
     except Exception as e:
         flash(f'❌ Error: {str(e)}', 'error')
     
     return redirect(url_for('admin_events'))
+
 
 
 
@@ -188,5 +186,6 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
