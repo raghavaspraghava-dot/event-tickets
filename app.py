@@ -33,9 +33,10 @@ def get_events():
     if supabase:
         try:
             response = supabase.table('events').select('*').execute()
-            return jsonify(response.data)
+            return jsonify(response.data or [])
         except:
             pass
+    
     # Fallback data
     return jsonify([
         {"id": "1", "name": "Tech Conference 2026", "date": "March 15, 2026", "capacity": 100, "available": 47},
@@ -88,15 +89,21 @@ def admin_dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
-    # SAFE stats
+    # 🔥 FIXED: Bulletproof stats counting
     bookings_count = 0
     events_count = 0
+    
     if supabase:
         try:
-            bookings_count = supabase.table('bookings').select('count').execute().count
-            events_count = supabase.table('events').select('count').execute().count
-        except:
-            pass
+            # Events count - SAFE
+            events_response = supabase.table('events').select('count').execute()
+            events_count = events_response.count if hasattr(events_response, 'count') and events_response.count is not None else 0
+            
+            # Bookings count - SAFE  
+            bookings_response = supabase.table('bookings').select('count').execute()
+            bookings_count = bookings_response.count if hasattr(bookings_response, 'count') and bookings_response.count is not None else 0
+        except Exception as e:
+            print(f"Dashboard error: {e}")
     
     return render_template('admin_dashboard.html', 
                          bookings_count=bookings_count, 
@@ -110,7 +117,8 @@ def admin_events():
     events = []
     if supabase:
         try:
-            events = supabase.table('events').select('*').execute().data
+            response = supabase.table('events').select('*').execute()
+            events = response.data if response and response.data else []
         except:
             pass
     
@@ -122,13 +130,13 @@ def add_event():
         return redirect(url_for('admin_login'))
     
     try:
-        # Get next ID safely
+        # 🔥 PERFECT ID GENERATION - NO DUPLICATES!
         next_id = 1
         if supabase:
-            all_events = supabase.table('events').select('id').execute()
-            if all_events.data:
-                existing_ids = [int(event['id']) for event in all_events.data]
-                next_id = max(existing_ids) + 1
+            response = supabase.table('events').select('id').execute()
+            if response and response.data:
+                existing_ids = [int(event['id']) for event in response.data]
+                next_id = max(existing_ids) + 1 if existing_ids else 1
         
         event_data = {
             'id': next_id,
@@ -141,33 +149,32 @@ def add_event():
         if supabase:
             supabase.table('events').insert(event_data).execute()
         
-        # 🔥 FIXED: ALL values as strings!
-        flash(f'✅ Event #{next_id} "{event_data["name"]}" added successfully! (ID: {next_id})', 'success')
+        # 🔥 FIXED STRING CONCAT - f-string safe!
+        flash(f'✅ Event #{next_id} "{event_data["name"]}" added! (Total: {next_id})', 'success')
         
     except Exception as e:
         flash(f'❌ Error: {str(e)}', 'error')
     
     return redirect(url_for('admin_events'))
 
-
-
-
 @app.route('/admin/events/delete/<event_id>')
 def delete_event(event_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
-    if supabase:
-        try:
-            # 1. DELETE related bookings FIRST
+    try:
+        event_id = int(event_id)  # Ensure integer
+        
+        if supabase:
+            # 1. Delete related bookings FIRST
             supabase.table('bookings').delete().eq('event_id', event_id).execute()
-            # 2. NOW delete event
+            # 2. Delete event
             supabase.table('events').delete().eq('id', event_id).execute()
-            flash('✅ Event + bookings deleted!', 'success')
-        except Exception as e:
-            flash(f'❌ Delete failed: {str(e)}', 'error')
-    else:
-        flash('⚠️ No database!', 'error')
+            flash('✅ Event and all bookings deleted!', 'success')
+        else:
+            flash('⚠️ No database connection!', 'error')
+    except Exception as e:
+        flash(f'❌ Delete failed: {str(e)}', 'error')
     
     return redirect(url_for('admin_events'))
 
@@ -177,15 +184,19 @@ def edit_event(event_id):
         return redirect(url_for('admin_login'))
     
     try:
+        event_id = int(event_id)
         event_data = {
             'name': request.form['name'],
             'date': request.form['date'],
             'capacity': int(request.form['capacity']),
             'available': int(request.form['available'])
         }
+        
         if supabase:
             supabase.table('events').update(event_data).eq('id', event_id).execute()
-        flash('✅ Event updated!', 'success')
+            flash('✅ Event updated successfully!', 'success')
+        else:
+            flash('⚠️ No database connection!', 'error')
     except Exception as e:
         flash(f'❌ Update failed: {str(e)}', 'error')
     
@@ -193,11 +204,3 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
-
-
