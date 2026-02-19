@@ -4,10 +4,9 @@ from dotenv import load_dotenv
 from supabase import create_client
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
-
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = 'your-super-secret-key-change-this-in-production'
+app.secret_key = 'eventickets-2026-super-secure-key-abc123'
 
 # Supabase connection
 supabase_url = os.getenv('SUPABASE_URL')
@@ -138,3 +137,4 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
