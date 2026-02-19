@@ -94,26 +94,24 @@ def admin_dashboard():
     
     if supabase:
         try:
-            # 🔥 METHOD 1: Count ALL rows (works 100%)
-            events_result = supabase.table('events').select('*', count='exact').execute()
-            events_count = len(events_result.data) if events_result.data else 0
+            # 🔥 METHOD 1: Simple SELECT * and len() - 100% RELIABLE
+            events_result = supabase.table('events').select('*').execute()
+            events_count = len(events_result.data) if events_result and events_result.data else 0
             
-            bookings_result = supabase.table('bookings').select('*', count='exact').execute()
-            bookings_count = len(bookings_result.data) if bookings_result.data else 0
+            bookings_result = supabase.table('bookings').select('*').execute()
+            bookings_count = len(bookings_result.data) if bookings_result and bookings_result.data else 0
             
-            print(f"🔢 DEBUG: Events={events_count}, Bookings={bookings_count}")
+            print(f"🔢 DEBUG - Events: {events_count}, Bookings: {bookings_count}")
             
         except Exception as e:
             print(f"❌ Dashboard error: {e}")
-            # Fallback: manual count
-            events_count = 0
-            bookings_count = 0
     
-    print(f"📊 DASHBOARD RENDERING: Events={events_count}, Bookings={bookings_count}")
+    print(f"📊 DASHBOARD SHOWING - Events: {events_count}, Bookings: {bookings_count}")
     
     return render_template('admin_dashboard.html', 
                          bookings_count=bookings_count, 
                          events_count=events_count)
+
 
 
 @app.route('/admin/events')
@@ -211,4 +209,5 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
