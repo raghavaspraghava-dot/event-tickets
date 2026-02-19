@@ -122,13 +122,13 @@ def add_event():
         return redirect(url_for('admin_login'))
     
     try:
-        # 🔥 BULLETPROOF ID GENERATION
+        # Get next ID safely
         next_id = 1
         if supabase:
             all_events = supabase.table('events').select('id').execute()
             if all_events.data:
-                existing_ids = [event['id'] for event in all_events.data]
-                next_id = max(existing_ids) + 1 if existing_ids else 1
+                existing_ids = [int(event['id']) for event in all_events.data]
+                next_id = max(existing_ids) + 1
         
         event_data = {
             'id': next_id,
@@ -141,8 +141,8 @@ def add_event():
         if supabase:
             supabase.table('events').insert(event_data).execute()
         
-        # ✅ FIXED: Convert int to str with str()
-        flash(f'✅ Event #{str(next_id)} "{event_data["name"]}" added successfully!', 'success')
+        # 🔥 FIXED: ALL values as strings!
+        flash(f'✅ Event #{next_id} "{event_data["name"]}" added successfully! (ID: {next_id})', 'success')
         
     except Exception as e:
         flash(f'❌ Error: {str(e)}', 'error')
@@ -193,6 +193,7 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
