@@ -9,9 +9,13 @@ app = Flask(__name__)
 app.secret_key = 'eventickets-2026-super-secure-key-abc123'
 
 # Supabase connection
-supabase_url = os.getenv('SUPABASE_URL')
-supabase_key = os.getenv('SUPABASE_PUBLISHABLE_KEY')
-supabase = create_client(supabase_url, supabase_key)
+try:
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_PUBLISHABLE_KEY')
+    supabase = create_client(supabase_url, supabase_key)
+except:
+    supabase = None
+    print("Using fallback data")
 
 # Admin credentials (hardcoded for demo - CHANGE IN PRODUCTION)
 ADMIN_EMAIL = 'admin@eventickets.com'
@@ -137,4 +141,5 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
