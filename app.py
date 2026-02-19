@@ -1,3 +1,4 @@
+# JAI SRI RAM....
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
 import os
 from dotenv import load_dotenv
@@ -189,6 +190,7 @@ def edit_event(event_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
