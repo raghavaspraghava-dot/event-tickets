@@ -1,120 +1,153 @@
 const API_BASE = '/api';
 
-document.addEventListener('DOMContentLoaded', initApp);
+// COMMON FUNCTIONS
+function showError(id, message) {
+    const errorDiv = document.getElementById(id);
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
 
-async function initApp() {
-    try {
-        // Test API connection
-        const response = await fetch('/api/health');
-        const data = await response.json();
-        document.getElementById('status').innerHTML = 
-            `✅ <strong>${data.message}</strong><br>🗄️ Supabase: <span style="color: ${data.supabase_status === 'ready' ? '#27ae60' : '#f39c12'}">${data.supabase_status}</span>`;
-    } catch (error) {
-        document.getElementById('status').innerHTML = '❌ API connection failed';
-        console.error('API health check failed:', error);
-    }
+function hideError(id) {
+    document.getElementById(id)?.style.setProperty('display', 'none');
+}
 
-    // Event listeners
-    document.getElementById('login-btn').addEventListener('click', adminLogin);
-    document.getElementById('refresh-btn').addEventListener('click', loadEvents);
-    document.getElementById('logout-btn').addEventListener('click', logout);
-
-    // Auto-login if token exists
-    if (localStorage.getItem('adminToken')) {
-        showDashboard();
-        loadEvents();
+function setLoading(btnId, loading = true) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+        btn.disabled = true;
+        btn.innerHTML = '🔄 Loading...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
     }
 }
 
+// ADMIN LOGIN
 async function adminLogin() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const btn = document.getElementById('login-btn');
-    const errorDiv = document.getElementById('login-error');
-
-    // Reset UI
-    errorDiv.style.display = 'none';
-    btn.disabled = true;
-    btn.innerHTML = '🔄 Logging in...';
-
+    const email = document.getElementById('admin-email').value;
+    const password = document.getElementById('admin-password').value;
+    
+    setLoading('admin-login-btn', true);
+    hideError('admin-error');
+    
     try {
-        console.log('Login attempt:', { email });
         const response = await fetch(`${API_BASE}/auth/admin-login`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-
-        console.log('Login response status:', response.status);
+        
         const data = await response.json();
-        console.log('Login data:', data);
-
+        
         if (data.token && data.token.startsWith('admin-')) {
             localStorage.setItem('adminToken', data.token);
-            showDashboard();
-            document.getElementById('status').innerHTML = '✅ Login successful! Dashboard loaded.';
+            window.location.href = '/admin/dashboard.html';
         } else {
-            throw new Error(data.error || 'Invalid login response');
+            throw new Error(data.error || 'Invalid credentials');
         }
     } catch (error) {
-        console.error('Login error:', error);
-        errorDiv.textContent = `❌ ${error.message}`;
-        errorDiv.style.display = 'block';
+        showError('admin-error', `Login failed: ${error.message}`);
     }
-
-    btn.disabled = false;
-    btn.innerHTML = '🚀 Login to Dashboard';
+    
+    setLoading('admin-login-btn', false);
 }
 
+// USER LOGIN  
+async function userLogin() {
+    const email = document.getElementById('user-email').value;
+    const password = document.getElementById('user-password').value;
+    
+    setLoading('user-login-btn', true);
+    hideError('user-error');
+    
+    try {
+        const response = await fetch(`${API_BASE}/auth/user-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.token) {
+            localStorage.setItem('userToken', data.token);
+            window.location.href = '/register.html';
+        } else {
+            throw new Error(data.error || 'Login failed');
+        }
+    } catch (error) {
+        showError('user-error', `Login failed: ${error.message}`);
+    }
+    
+    setLoading('user-login-btn', false);
+}
+
+// USER REGISTER
+async function userRegister() {
+    const email = document.getElementById('register-email').value;
+    const tickets = parseInt(document.getElementById('tickets').value);
+    
+    setLoading('register-btn', true);
+    hideError('register-error');
+    
+    try {
+        // Get first event for demo
+        const eventsRes = await fetch(`${API_BASE}/events`);
+        const events = await eventsRes.json();
+        
+        if (events.length === 0) {
+            throw new Error('No events available');
+        }
+        
+        const event = events[0];
+        
+        const response = await fetch(`${API_BASE}/tickets/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                event_id: event.id,
+                tickets
+            })
+        });
+        
+        const data = await response.json();
+        showSuccess('✅ Tickets registered! Check your email.');
+        document.getElementById('register-form').style.display = 'none';
+        
+    } catch (error) {
+        showError('register-error', error.message);
+    }
+    
+    setLoading('register-btn', false);
+}
+
+// DASHBOARD FUNCTIONS
 async function loadEvents() {
-    const token = localStorage.getItem('adminToken');
-    if (!token) return logout();
-
     const eventsList = document.getElementById('events-list');
-    eventsList.innerHTML = '<div class="loading">🔄 Loading events...</div>';
-
+    eventsList.innerHTML = '<div class="loading">Loading...</div>';
+    
     try {
         const response = await fetch(`${API_BASE}/events`);
         const events = await response.json();
-
+        
         if (events.length === 0) {
-            eventsList.innerHTML = 
-                '<div class="event" style="text-align:center; color:#7f8c8d;">📭 No events yet<br><small>Supabase database is empty. Add events via API.</small></div>';
-            document.getElementById('event-count').textContent = '0 events';
+            eventsList.innerHTML = '<div class="event" style="text-align:center;">No events</div>';
         } else {
-            eventsList.innerHTML = events.map(event => createEventHTML(event)).join('');
-            document.getElementById('event-count').textContent = `${events.length} event${events.length !== 1 ? 's' : ''}`;
+            eventsList.innerHTML = events.map(e => `
+                <div class="event">
+                    <h3>${e.title}</h3>
+                    <p>📅 ${e.date} | 🎫 ${e.total_tickets} tickets</p>
+                </div>
+            `).join('');
         }
     } catch (error) {
-        console.error('Load events error:', error);
-        eventsList.innerHTML = 
-            '<div class="event" style="text-align:center; color:#e74c3c;">❌ Failed to load events: ' + error.message + '</div>';
+        eventsList.innerHTML = '<div class="error">Failed to load events</div>';
     }
-}
-
-function createEventHTML(event) {
-    return `
-        <div class="event">
-            <h3>${event.title || 'Untitled'}</h3>
-            <p>📅 <strong>Date:</strong> ${event.date || 'TBD'}</p>
-            <p>🎫 <strong>Tickets:</strong> ${event.total_tickets || 0} available</p>
-            ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
-        </div>
-    `;
-}
-
-function showDashboard() {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
 }
 
 function logout() {
     localStorage.removeItem('adminToken');
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('status').innerHTML = 'Checking API status...';
-    document.getElementById('email').focus();
+    localStorage.removeItem('userToken');
+    window.location.href = '/index.html';
 }
