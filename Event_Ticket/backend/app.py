@@ -163,6 +163,41 @@ def health_check():
         "supabase_status": "ready" if client else "needs_config"
     }), 200
 
+
+# 🎯 FRONTEND ROUTES (Add these 15 lines)
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    """Serve frontend files from ../frontend folder"""
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    
+    # Don't interfere with API routes
+    if path.startswith('api'):
+        return f'API endpoint: /{path}', 404
+    
+    # Serve index.html for app routes (SPA)
+    if not path or path == 'index.html' or path.endswith('/'):
+        try:
+            return send_from_directory(frontend_dir, 'index.html')
+        except FileNotFoundError:
+            return jsonify({"error": "Frontend not found. Create frontend/index.html"}), 404
+    
+    # Serve other static files
+    try:
+        return send_from_directory(frontend_dir, path)
+    except FileNotFoundError:
+        # Fallback to index.html for client-side routing
+        return send_from_directory(frontend_dir, 'index.html')
+
+# Health check (already working)
+@app.route('/api/health')
+def health_check():
+    client = get_supabase_client()
+    return jsonify({
+        "message": "Event Ticket Registration API LIVE!", 
+        "supabase_status": "ready" if client else "needs_config"
+    }), 200
 if __name__ == '__main__':
     app.run(debug=True)
+
 
