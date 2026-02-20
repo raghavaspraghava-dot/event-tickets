@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from config import Config
 import hashlib
@@ -42,13 +42,31 @@ ADMIN_PASSWORD = app.config['ADMIN_PASSWORD']
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "Event Ticket Registration API LIVE!", 
-        "supabase_status": "ready" if get_supabase_client() else "needs_config"
-    }), 200
+# 🎯 SINGLE FRONTEND ROUTE (Replaces your home route)
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    """Serve frontend files from ../frontend folder"""
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    
+    # Protect API routes (let existing API routes handle them)
+    if path.startswith('api'):
+        return '', 404
+    
+    # Serve index.html for SPA routes
+    if not path or path == 'index.html' or path.endswith('/'):
+        try:
+            return send_from_directory(frontend_dir, 'index.html')
+        except FileNotFoundError:
+            return jsonify({"error": "Frontend not found. Create frontend/index.html"}), 404
+    
+    # Serve other static files or fallback to index.html
+    try:
+        return send_from_directory(frontend_dir, path)
+    except FileNotFoundError:
+        return send_from_directory(frontend_dir, 'index.html')
 
+# API ROUTES (UNCHANGED - your existing code)
 @app.route('/api/auth/user-login', methods=['POST'])
 def user_login():
     client = get_supabase_client()
@@ -134,27 +152,7 @@ def register_tickets():
         'total_tickets': event['total_tickets'] - data['tickets']
     }).eq('id', data['event_id']).execute()
     return jsonify({'message': 'Tickets registered!'}), 201
-# ADD THESE LINES AT THE END (before if __name__ == '__main__':)
 
-# Serve frontend files from ../frontend folder
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    """Serve frontend static files"""
-    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
-    
-    # API routes handled by existing routes
-    if path.startswith('api/'):
-        return jsonify({'error': 'Use API endpoints directly'}), 404
-    
-    # Serve index.html for SPA routes
-    if path in ['', 'index.html'] or path.endswith('/'):
-        return send_from_directory(frontend_dir, 'index.html')
-    
-    # Serve static files
-    return send_from_directory(frontend_dir, path)
-
-# Health check endpoint
 @app.route('/api/health')
 def health_check():
     client = get_supabase_client()
@@ -163,41 +161,5 @@ def health_check():
         "supabase_status": "ready" if client else "needs_config"
     }), 200
 
-
-# 🎯 FRONTEND ROUTES (Add these 15 lines)
-@app.route('/', defaults={'path': 'index.html'})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    """Serve frontend files from ../frontend folder"""
-    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
-    
-    # Don't interfere with API routes
-    if path.startswith('api'):
-        return f'API endpoint: /{path}', 404
-    
-    # Serve index.html for app routes (SPA)
-    if not path or path == 'index.html' or path.endswith('/'):
-        try:
-            return send_from_directory(frontend_dir, 'index.html')
-        except FileNotFoundError:
-            return jsonify({"error": "Frontend not found. Create frontend/index.html"}), 404
-    
-    # Serve other static files
-    try:
-        return send_from_directory(frontend_dir, path)
-    except FileNotFoundError:
-        # Fallback to index.html for client-side routing
-        return send_from_directory(frontend_dir, 'index.html')
-
-# Health check (already working)
-@app.route('/api/health')
-def health_check():
-    client = get_supabase_client()
-    return jsonify({
-        "message": "Event Ticket Registration API LIVE!", 
-        "supabase_status": "ready" if client else "needs_config"
-    }), 200
 if __name__ == '__main__':
     app.run(debug=True)
-
-
