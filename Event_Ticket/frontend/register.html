@@ -9,9 +9,15 @@
 <body>
     <div class="container">
         <h1>🎫 Register Tickets</h1>
-        <div class="status">Select event and register</div>
+        <div class="status">Complete your details and select event</div>
         
-        <input type="email" id="register-email" placeholder="your@email.com">
+        <input type="text" id="user-name" placeholder="Full Name">
+        <input type="email" id="register-email" placeholder="Email">
+        
+        <select id="event-select">
+            <option value="">Loading events...</option>
+        </select>
+        
         <input type="number" id="tickets" placeholder="Number of tickets" min="1" max="10" value="1">
         
         <button id="register-btn" class="btn-success" onclick="userRegister()">
