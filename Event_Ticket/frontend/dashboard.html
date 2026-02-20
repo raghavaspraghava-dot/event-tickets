@@ -10,6 +10,7 @@
     <div class="container">
         <h1>📊 Admin Dashboard</h1>
         
+        <!-- Dashboard Stats -->
         <div class="dashboard-header">
             <button onclick="loadEvents()" class="btn-secondary">
                 🔄 Refresh Events
@@ -17,6 +18,21 @@
             <span id="event-count">Loading...</span>
         </div>
         
+        <!-- ✨ NEW EVENT CREATION FORM -->
+        <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;">
+            <h2>➕ Create New Event</h2>
+            <input type="text" id="event-title" placeholder="Event Title">
+            <input type="text" id="event-description" placeholder="Description">
+            <input type="date" id="event-date">
+            <input type="number" id="event-tickets" placeholder="Total Tickets" min="1">
+            <button id="create-event-btn" class="btn-success" onclick="createEvent()">
+                ✨ Create Event
+            </button>
+            <div id="create-event-error" class="error"></div>
+        </div>
+        
+        <!-- Events List -->
+        <h2>📋 Events List</h2>
         <div id="events-list" class="loading">
             Loading events...
         </div>
