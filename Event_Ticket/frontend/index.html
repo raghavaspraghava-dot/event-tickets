@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ticket Registration</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">🎫 EventHub</h1>
+                <div class="nav-links">
+                    <a href="user_login.html">Login</a>
+                    <a href="register.html">Register Event</a>
+                    <a href="admin_login.html">Admin</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Discover Amazing Events</h2>
+            <p>Find and register for events happening in your city</p>
+        </section>
+
+        <section class="events-section">
+            <h2>Upcoming Events</h2>
+            <div class="events-grid" id="eventsGrid">
+                <div class="loading">Loading events...</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Load events on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEvents();
+        });
+    </script>
+</body>
+</html>
