@@ -134,6 +134,35 @@ def register_tickets():
         'total_tickets': event['total_tickets'] - data['tickets']
     }).eq('id', data['event_id']).execute()
     return jsonify({'message': 'Tickets registered!'}), 201
+# ADD THESE LINES AT THE END (before if __name__ == '__main__':)
+
+# Serve frontend files from ../frontend folder
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    """Serve frontend static files"""
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    
+    # API routes handled by existing routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'Use API endpoints directly'}), 404
+    
+    # Serve index.html for SPA routes
+    if path in ['', 'index.html'] or path.endswith('/'):
+        return send_from_directory(frontend_dir, 'index.html')
+    
+    # Serve static files
+    return send_from_directory(frontend_dir, path)
+
+# Health check endpoint
+@app.route('/api/health')
+def health_check():
+    client = get_supabase_client()
+    return jsonify({
+        "message": "Event Ticket Registration API LIVE!", 
+        "supabase_status": "ready" if client else "needs_config"
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
+
