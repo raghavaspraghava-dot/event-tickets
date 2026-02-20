@@ -1,43 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - EventHub</title>
+    <title>Admin Login</title>
+    <meta name="viewport" content="width=device-width">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="index.html" class="logo">🎫 EventHub Admin</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="container">
-        <div class="form-container">
-            <h2>Admin Login</h2>
-            <form id="adminLoginForm" class="form">
-                <div class="form-group">
-                    <label for="adminEmail">Email</label>
-                    <input type="email" id="adminEmail" value="admin@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="adminPassword">Password</label>
-                    <input type="password" id="adminPassword" value="admin123" required>
-                </div>
-                <button type="submit" class="btn-primary">Admin Login</button>
-            </form>
-            <div id="adminLoginMessage" class="error-message"></div>
-        </div>
-    </main>
-
+    <div class="container">
+        <h1>🔐 Admin Login</h1>
+        <div class="status">Enter admin credentials</div>
+        
+        <input type="email" id="admin-email" placeholder="admin@example.com" value="admin@example.com">
+        <input type="password" id="admin-password" placeholder="admin123" value="admin123">
+        <button id="admin-login-btn" class="btn-primary" onclick="adminLogin()">Login → Dashboard</button>
+        <div id="admin-error" class="error"></div>
+        <a href="index.html"><button class="link-btn">← Back to Home</button></a>
+    </div>
     <script src="js/app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('adminLoginForm').addEventListener('submit', handleAdminLogin);
-        });
-    </script>
 </body>
 </html>
