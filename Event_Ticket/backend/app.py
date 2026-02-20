@@ -20,7 +20,6 @@ def get_supabase_client():
     global supabase_client
     if supabase_client is None:
         try:
-            # Check if real keys exist
             if 'dummy' not in app.config['SUPABASE_KEY']:
                 import supabase
                 supabase_client = supabase.create_client(
@@ -29,7 +28,7 @@ def get_supabase_client():
                 )
                 print("✅ Supabase connected!")
             else:
-                print("⚠️ Using dummy Supabase keys - add real keys in Render Environment")
+                print("⚠️ Using dummy Supabase keys")
                 supabase_client = None
         except Exception as e:
             print(f"❌ Supabase error: {e}")
@@ -42,31 +41,46 @@ ADMIN_PASSWORD = app.config['ADMIN_PASSWORD']
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# 🎯 SINGLE FRONTEND ROUTE (Replaces your home route)
-@app.route('/', defaults={'path': 'index.html'})
+# 🎯 FIXED FRONTEND ROUTING - Serves ALL 7 pages
+@app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
-    """Serve frontend files from ../frontend folder"""
+    """Serve all frontend pages + static files"""
     frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
     
-    # Protect API routes (let existing API routes handle them)
+    # Valid HTML pages
+    VALID_PAGES = [
+        'index.html', 'admin.html', 'admin_login.html', 'dashboard.html',
+        'register.html', 'user_login.html'
+    ]
+    
+    # API protection
     if path.startswith('api'):
         return '', 404
     
-    # Serve index.html for SPA routes
-    if not path or path == 'index.html' or path.endswith('/'):
-        try:
-            return send_from_directory(frontend_dir, 'index.html')
-        except FileNotFoundError:
-            return jsonify({"error": "Frontend not found. Create frontend/index.html"}), 404
+    # Serve exact HTML pages
+    if path.endswith('.html') or path in VALID_PAGES:
+        filename = path if path.endswith('.html') else f"{path}.html"
+        if filename in VALID_PAGES:
+            try:
+                return send_from_directory(frontend_dir, filename)
+            except FileNotFoundError:
+                pass
     
-    # Serve other static files or fallback to index.html
+    # Serve CSS/JS files
+    if path.startswith(('css/', 'js/')):
+        try:
+            return send_from_directory(frontend_dir, path)
+        except FileNotFoundError:
+            pass
+    
+    # Default fallback
     try:
-        return send_from_directory(frontend_dir, path)
-    except FileNotFoundError:
         return send_from_directory(frontend_dir, 'index.html')
+    except FileNotFoundError:
+        return jsonify({"error": "Frontend missing"}), 404
 
-# API ROUTES (UNCHANGED - your existing code)
+# API ROUTES (UNCHANGED)
 @app.route('/api/auth/user-login', methods=['POST'])
 def user_login():
     client = get_supabase_client()
@@ -102,7 +116,6 @@ def get_events():
     client = get_supabase_client()
     if not client:
         return jsonify([]), 200
-    
     try:
         response = client.table('events').select('*').order('date').execute()
         return jsonify(response.data), 200
@@ -137,21 +150,24 @@ def register_tickets():
         return jsonify({'error': 'Database not configured'}), 503
     
     data = request.get_json()
-    event = client.table('events').select('total_tickets').eq('id', data['event_id']).execute().data[0]
-    
-    if event['total_tickets'] < data['tickets']:
-        return jsonify({'error': 'Not enough tickets'}), 400
-    
-    client.table('registrations').insert({
-        'user_email': data['email'],
-        'event_id': data['event_id'],
-        'tickets': data['tickets']
-    }).execute()
-    
-    client.table('events').update({
-        'total_tickets': event['total_tickets'] - data['tickets']
-    }).eq('id', data['event_id']).execute()
-    return jsonify({'message': 'Tickets registered!'}), 201
+    try:
+        event = client.table('events').select('total_tickets').eq('id', data['event_id']).execute().data[0]
+        
+        if event['total_tickets'] < data['tickets']:
+            return jsonify({'error': 'Not enough tickets'}), 400
+        
+        client.table('registrations').insert({
+            'user_email': data['email'],
+            'event_id': data['event_id'],
+            'tickets': data['tickets']
+        }).execute()
+        
+        client.table('events').update({
+            'total_tickets': event['total_tickets'] - data['tickets']
+        }).eq('id', data['event_id']).execute()
+        return jsonify({'message': 'Tickets registered!'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health')
 def health_check():
