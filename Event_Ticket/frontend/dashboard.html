@@ -1,21 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
-    <meta name="viewport" content="width=device-width">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
         <h1>📊 Admin Dashboard</h1>
+        
         <div class="dashboard-header">
-            <button onclick="loadEvents()" class="btn-secondary">🔄 Refresh</button>
-            <span id="event-count"></span>
+            <button onclick="loadEvents()" class="btn-secondary">
+                🔄 Refresh Events
+            </button>
+            <span id="event-count">Loading...</span>
         </div>
-        <div id="events-list" class="loading">Loading events...</div>
-        <button onclick="logout()" class="btn-danger">Logout</button>
+        
+        <div id="events-list" class="loading">
+            Loading events...
+        </div>
+        
+        <button onclick="logout()" class="btn-danger">
+            🚪 Logout
+        </button>
     </div>
     <script src="js/app.js"></script>
-    <script>loadEvents();</script>
 </body>
 </html>
