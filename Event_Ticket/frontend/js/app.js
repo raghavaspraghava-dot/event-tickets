@@ -1,6 +1,31 @@
 const API_BASE = '/api';
 
-// 🔒 FORM VALIDATION FUNCTIONS
+// 🔍 FIXED JSON ERROR HANDLING
+async function safeFetch(url, options = {}) {
+    try {
+        const response = await fetch(url, options);
+        
+        // ✅ CHECK IF HTML ERROR PAGE (Common Flask 404/500 issue)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Server returned HTML (404/500). Check if ${url} exists.`);
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        if (error.message.includes('Unexpected token')) {
+            throw new Error('Server error: API endpoint not found or crashed');
+        }
+        throw error;
+    }
+}
+
+// 🔒 FORM VALIDATION (Unchanged)
 function validateEmail(email) {
     if (!email || email.trim() === '') return 'Please enter your email';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +44,16 @@ function validateTickets(tickets) {
     return '';
 }
 
-// COMMON UI FUNCTIONS
+function validateEvent(title, description, date, tickets) {
+    if (!title || title.trim() === '') return 'Event title required';
+    if (!description || description.trim() === '') return 'Description required';
+    if (!date || date === '') return 'Event date required';
+    const numTickets = parseInt(tickets);
+    if (isNaN(numTickets) || numTickets <= 0) return 'Valid ticket count required';
+    return '';
+}
+
+// UI FUNCTIONS
 function showError(id, message) {
     const errorDiv = document.getElementById(id);
     if (errorDiv) {
@@ -46,17 +80,15 @@ function setLoading(btnId, loading = true) {
     }
 }
 
-// 🔄 REDIRECT FUNCTION (Fixed for Flask)
 function redirectTo(page) {
     window.location.href = `/${page}`;
 }
 
-// 👨‍💼 ADMIN LOGIN (With Validation)
+// 👨‍💼 ADMIN LOGIN (Fixed JSON handling)
 async function adminLogin() {
     const email = document.getElementById('admin-email')?.value?.trim();
     const password = document.getElementById('admin-password')?.value;
     
-    // VALIDATION
     const emailError = validateEmail(email);
     if (emailError) {
         showError('admin-error', emailError);
@@ -72,13 +104,11 @@ async function adminLogin() {
     hideError('admin-error');
     
     try {
-        const response = await fetch(`${API_BASE}/auth/admin-login`, {
+        const data = await safeFetch(`${API_BASE}/auth/admin-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        
-        const data = await response.json();
         
         if (data.token && data.token.startsWith('admin-')) {
             localStorage.setItem('adminToken', data.token);
@@ -93,12 +123,11 @@ async function adminLogin() {
     setLoading('admin-login-btn', false);
 }
 
-// 👤 USER LOGIN (With Validation)
+// 👤 USER LOGIN (Fixed JSON handling)
 async function userLogin() {
     const email = document.getElementById('user-email')?.value?.trim();
     const password = document.getElementById('user-password')?.value;
     
-    // VALIDATION
     const emailError = validateEmail(email);
     if (emailError) {
         showError('user-error', emailError);
@@ -114,13 +143,11 @@ async function userLogin() {
     hideError('user-error');
     
     try {
-        const response = await fetch(`${API_BASE}/auth/user-login`, {
+        const data = await safeFetch(`${API_BASE}/auth/user-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        
-        const data = await response.json();
         
         if (data.token) {
             localStorage.setItem('userToken', data.token);
@@ -135,13 +162,11 @@ async function userLogin() {
     setLoading('user-login-btn', false);
 }
 
-// 🎫 USER REGISTER TICKETS (With Validation)
+// 🎫 REGISTER TICKETS
 async function userRegister() {
     const email = document.getElementById('register-email')?.value?.trim();
-    const ticketsInput = document.getElementById('tickets');
-    const tickets = ticketsInput?.value;
+    const tickets = document.getElementById('tickets')?.value;
     
-    // VALIDATION
     const emailError = validateEmail(email);
     if (emailError) {
         showError('register-error', emailError);
@@ -157,15 +182,13 @@ async function userRegister() {
     hideError('register-error');
     
     try {
-        const eventsRes = await fetch(`${API_BASE}/events`);
-        const events = await eventsRes.json();
-        
+        const events = await safeFetch(`${API_BASE}/events`);
         if (events.length === 0) {
             throw new Error('No events available. Contact admin.');
         }
         
         const event = events[0];
-        const response = await fetch(`${API_BASE}/tickets/register`, {
+        const data = await safeFetch(`${API_BASE}/tickets/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -175,7 +198,6 @@ async function userRegister() {
             })
         });
         
-        const data = await response.json();
         showSuccess('✅ Tickets registered successfully!');
         
     } catch (error) {
@@ -185,25 +207,30 @@ async function userRegister() {
     setLoading('register-btn', false);
 }
 
-// 📊 DASHBOARD FUNCTIONS
+// 📊 DASHBOARD FUNCTIONS + NEW EVENT CREATION
 async function loadEvents() {
     const eventsList = document.getElementById('events-list');
-    if (!eventsList) return;
+    const token = localStorage.getItem('adminToken');
     
+    if (!token || !token.startsWith('admin-')) {
+        redirectTo('index.html');
+        return;
+    }
+    
+    if (!eventsList) return;
     eventsList.innerHTML = '<div style="text-align:center;padding:20px;">🔄 Loading events...</div>';
     
     try {
-        const response = await fetch(`${API_BASE}/events`);
-        const events = await response.json();
+        const events = await safeFetch(`${API_BASE}/events`);
         
         if (events.length === 0) {
-            eventsList.innerHTML = '<div style="text-align:center;color:#666;padding:40px;">📭 No events yet</div>';
+            eventsList.innerHTML = '<div style="text-align:center;color:#666;padding:40px;">📭 No events yet<br><small>Create your first event below!</small></div>';
             document.getElementById('event-count').textContent = '0 events';
         } else {
             eventsList.innerHTML = events.map(event => `
                 <div class="event">
                     <h3>${event.title || 'Untitled'}</h3>
-                    <p>📅 ${event.date || 'TBD'}</p>
+                    <p>📅 ${new Date(event.date).toLocaleDateString()}</p>
                     <p>🎫 ${event.total_tickets || 0} tickets available</p>
                     ${event.description ? `<p>${event.description}</p>` : ''}
                 </div>
@@ -213,6 +240,49 @@ async function loadEvents() {
     } catch (error) {
         eventsList.innerHTML = '<div style="color:#e74c3c;text-align:center;padding:40px;">❌ Failed to load events</div>';
     }
+}
+
+// ✨ NEW: CREATE EVENT FUNCTION
+async function createEvent() {
+    const title = document.getElementById('event-title')?.value?.trim();
+    const description = document.getElementById('event-description')?.value?.trim();
+    const date = document.getElementById('event-date')?.value;
+    const tickets = document.getElementById('event-tickets')?.value;
+    
+    const validationError = validateEvent(title, description, date, tickets);
+    if (validationError) {
+        showError('create-event-error', validationError);
+        return;
+    }
+    
+    setLoading('create-event-btn', true);
+    hideError('create-event-error');
+    
+    try {
+        const token = localStorage.getItem('adminToken');
+        const data = await safeFetch(`${API_BASE}/events`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                date,
+                total_tickets: parseInt(tickets)
+            })
+        });
+        
+        showSuccess('✅ Event created successfully!');
+        document.getElementById('event-form').reset();
+        loadEvents(); // Refresh list
+        
+    } catch (error) {
+        showError('create-event-error', `Failed to create event: ${error.message}`);
+    }
+    
+    setLoading('create-event-btn', false);
 }
 
 function logout() {
@@ -231,15 +301,7 @@ function showSuccess(message) {
 
 // PAGE INIT
 document.addEventListener('DOMContentLoaded', function() {
-    // Add click listeners for all buttons
-    document.querySelectorAll('[onclick]').forEach(btn => {
-        if (!btn.onclick.name || !['adminLogin', 'userLogin', 'userRegister'].includes(btn.onclick.name)) {
-            btn.addEventListener('click', btn.onclick);
-        }
-    });
-    
-    // Auto-load dashboard if admin
-    if (window.location.pathname.includes('dashboard.html') && localStorage.getItem('adminToken')) {
+    if (window.location.pathname.includes('dashboard.html')) {
         loadEvents();
     }
 });
