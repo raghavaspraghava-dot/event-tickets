@@ -7,30 +7,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎫 Event Ticket Registration System</h1>
+        <h1>🎫 Event Ticket System</h1>
+        <div class="status">Welcome! Choose your role:</div>
         
-        <div id="status" class="status">Checking API status...</div>
-        
-        <div id="login-form">
-            <h2>👨‍💼 Admin Login</h2>
-            <input type="email" id="email" placeholder="admin@example.com" value="admin@example.com">
-            <input type="password" id="password" placeholder="admin123" value="admin123">
-            <button id="login-btn" class="btn-primary">🚀 Login to Dashboard</button>
-            <div id="login-error" class="error" style="display:none;"></div>
-        </div>
-        
-        <div id="dashboard" class="dashboard" style="display:none;">
-            <h2>📊 Admin Dashboard</h2>
-            <div class="dashboard-header">
-                <button id="refresh-btn" class="btn-secondary">🔄 Refresh Events</button>
-                <span id="event-count"></span>
-            </div>
-            <div id="events-list"></div>
-            <button id="logout-btn" class="btn-danger">🚪 Logout</button>
-        </div>
+        <a href="admin_login.html"><button class="btn-primary">👨‍💼 Admin Login</button></a>
+        <a href="user_login.html"><button class="btn-success">👤 User Login</button></a>
+        <a href="register.html"><button class="btn-secondary">📝 Register</button></a>
     </div>
-
-    <!-- Load JS at bottom for better performance -->
     <script src="js/app.js"></script>
 </body>
 </html>
