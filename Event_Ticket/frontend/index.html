@@ -1,44 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Ticket Registration</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Event Tickets</title>
+    <meta name="viewport" content="width=device-width">
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
+        input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover:not(:disabled) { background: #2980b9; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .event { background: #ecf0f1; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 5px solid #3498db; }
+        .status { background: #d5f4e6; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; font-weight: bold; color: #27ae60; }
+        #dashboard { display: none; }
+        .logout { background: #e74c3c !important; margin-top: 20px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 12px; border-radius: 5px; margin: 10px 0; }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="nav-container">
-                <h1 class="logo">🎫 EventHub</h1>
-                <div class="nav-links">
-                    <a href="user_login.html">Login</a>
-                    <a href="register.html">Register Event</a>
-                    <a href="admin_login.html">Admin</a>
-                </div>
+    <div class="container">
+        <h1>🎫 Event Ticket Registration System</h1>
+        
+        <div id="status" class="status">Checking API status...</div>
+        
+        <div id="login-form">
+            <h2>👨‍💼 Admin Login</h2>
+            <input type="email" id="email" placeholder="admin@example.com" value="admin@example.com">
+            <input type="password" id="password" placeholder="admin123" value="admin123">
+            <button onclick="adminLogin()">🚀 Login to Dashboard</button>
+        </div>
+        
+        <div id="dashboard" style="display:none;">
+            <h2>📊 Admin Dashboard</h2>
+            <div style="margin-bottom: 20px;">
+                <button onclick="loadEvents()" style="width: auto; padding: 10px 20px;">🔄 Refresh Events</button>
+                <span id="event-count" style="margin-left: 20px; font-weight: bold;"></span>
             </div>
-        </nav>
-    </header>
+            <div id="events-list"></div>
+            <button class="logout" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
 
-    <main class="container">
-        <section class="hero">
-            <h2>Discover Amazing Events</h2>
-            <p>Find and register for events happening in your city</p>
-        </section>
-
-        <section class="events-section">
-            <h2>Upcoming Events</h2>
-            <div class="events-grid" id="eventsGrid">
-                <div class="loading">Loading events...</div>
-            </div>
-        </section>
-    </main>
-
-    <script src="js/app.js"></script>
     <script>
-        // Load events on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadEvents();
+        const API_BASE = '/api';
+        
+        async function adminLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = event.target;
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Logging in...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/admin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.token) {
+                    localStorage.setItem('adminToken', data.token);
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('status').innerHTML = '✅ Login successful! Loading dashboard...';
+                    loadEvents();
+                } else {
+                    alert('❌ Login failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Connection error: ' + error.message);
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Login to Dashboard';
+        }
+        
+        async function loadEvents() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) return logout();
+            
+            document.getElementById('events-list').innerHTML = '<div class="success">Loading events...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/events`);
+                const events = await response.json();
+                
+                if (events.length === 0) {
+                    document.getElementById('events-list').innerHTML = 
+                        '<div class="event" style="text-align:center; color:#7f8c8d;">📭 No events yet<br><small>Supabase database is empty. Add events via API or database directly.</small></div>';
+                    document.getElementById('event-count').textContent = '0 events';
+                } else {
+                    document.getElementById('events-list').innerHTML = 
+                        events.map(event => `
+                            <div class="event">
+                                <h3>${event.title || 'Untitled'}</h3>
+                                <p>📅 <strong>Date:</strong> ${event.date || 'TBD'}</p>
+                                <p>🎫 <strong>Tickets Available:</strong> ${event.total_tickets || 0}</p>
+                                ${event.description ? `<p>${event.description}</p>` : ''}
+                            </div>
+                        `).join('');
+                    document.getElementById('event-count').textContent = `${events.length} events`;
+                }
+            } catch (error) {
+                document.getElementById('events-list').innerHTML = 
+                    '<div class="event" style="text-align:center; color:#e74c3c;">❌ Error: ' + error.message + '</div>';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('adminToken');
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+        
+        // Check API + Supabase status on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('status').innerHTML = 
+                    `✅ <strong>${data.message}</strong><br>🗄️ Supabase: <span style="color: ${data.supabase_status === 'ready' ? '#27ae60' : '#f39c12'}">${data.supabase_status}</span>`;
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ API connection failed';
+            }
+            
+            // Auto-login if token exists
+            if (localStorage.getItem('adminToken')) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadEvents();
+            }
         });
     </script>
 </body>
