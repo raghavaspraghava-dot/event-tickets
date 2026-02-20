@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manage Events</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="container">
+
+<div class="section">
+<h2>Events</h2>
+
+<table border="1" width="100%">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Date</th>
+<th>Capacity</th>
+<th>Available</th>
+</tr>
+
+{% for e in events %}
+<tr>
+<td>{{ e.id }}</td>
+<td>{{ e.name }}</td>
+<td>{{ e.date }}</td>
+<td>{{ e.capacity }}</td>
+<td>{{ e.available }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+</div>
+</body>
+</html>
