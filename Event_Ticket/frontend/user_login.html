@@ -1,46 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Login - EventHub</title>
+    <title>User Login</title>
+    <meta name="viewport" content="width=device-width">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="index.html" class="logo">🎫 EventHub</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="container">
-        <div class="form-container">
-            <h2>User Login</h2>
-            <form id="userLoginForm" class="form">
-                <div class="form-group">
-                    <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn-primary">Login</button>
-            </form>
-            <div id="loginMessage" class="error-message"></div>
-            <p class="signup-link">
-                New user? <a href="register.html">Register for an event</a>
-            </p>
-        </div>
-    </main>
-
+    <div class="container">
+        <h1>👤 User Login</h1>
+        <input type="email" id="user-email" placeholder="your@email.com">
+        <input type="password" id="user-password" placeholder="password">
+        <button id="user-login-btn" class="btn-primary" onclick="userLogin()">Login → Register</button>
+        <div id="user-error" class="error"></div>
+        <a href="index.html"><button class="link-btn">← Home</button></a>
+    </div>
     <script src="js/app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('userLoginForm').addEventListener('submit', handleUserLogin);
-        });
-    </script>
 </body>
 </html>
