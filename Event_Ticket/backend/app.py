@@ -1,11 +1,15 @@
 import sys
 import os
-# FIX: Add current directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, jsonify
-from flask
+from flask_cors import CORS
 
+# Import routes AFTER fixing path
+from routes.auth import auth_bp
+from routes.events import events_bp
+from routes.tickets import tickets_bp
+from routes.admin import admin_bp
 
 def create_app():
     app = Flask(__name__)
