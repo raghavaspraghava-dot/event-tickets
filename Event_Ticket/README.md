@@ -26,5 +26,6 @@ A fully functional event ticket registration web application built with modern w
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/event-ticket-registration.git
+git clone https://github.com/raghavaspraghava-dot/event-tickets.git
 cd event-ticket-registration
+
