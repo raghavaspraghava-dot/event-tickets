@@ -162,14 +162,26 @@ async function userLogin() {
     setLoading('user-login-btn', false);
 }
 
-// 🎫 REGISTER TICKETS
+// ✨ ENHANCED TICKET REGISTRATION
 async function userRegister() {
+    const name = document.getElementById('user-name')?.value?.trim();
     const email = document.getElementById('register-email')?.value?.trim();
+    const eventSelect = document.getElementById('event-select');
+    const eventId = eventSelect?.value;
     const tickets = document.getElementById('tickets')?.value;
     
+    // VALIDATION
+    if (!name) {
+        showError('register-error', 'Please enter your full name');
+        return;
+    }
     const emailError = validateEmail(email);
     if (emailError) {
         showError('register-error', emailError);
+        return;
+    }
+    if (!eventId) {
+        showError('register-error', 'Please select an event');
         return;
     }
     const ticketsError = validateTickets(tickets);
@@ -182,23 +194,23 @@ async function userRegister() {
     hideError('register-error');
     
     try {
-        const events = await safeFetch(`${API_BASE}/events`);
-        if (events.length === 0) {
-            throw new Error('No events available. Contact admin.');
-        }
-        
-        const event = events[0];
+        // Register tickets
         const data = await safeFetch(`${API_BASE}/tickets/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                name,  // ✨ NEW: User name
                 email,
-                event_id: event.id,
+                event_id: eventId,
                 tickets: parseInt(tickets)
             })
         });
         
         showSuccess('✅ Tickets registered successfully!');
+        document.getElementById('user-name').value = '';
+        document.getElementById('register-email').value = '';
+        document.getElementById('tickets').value = '1';
+        eventSelect.selectedIndex = 0;
         
     } catch (error) {
         showError('register-error', error.message);
@@ -206,6 +218,32 @@ async function userRegister() {
     
     setLoading('register-btn', false);
 }
+
+// ✨ LOAD EVENTS FOR DROPDOWN (Auto-run on register page)
+async function loadEventsForRegister() {
+    const eventSelect = document.getElementById('event-select');
+    if (!eventSelect) return;
+    
+    try {
+        const events = await safeFetch(`${API_BASE}/events`);
+        eventSelect.innerHTML = '<option value="">Select an event...</option>';
+        
+        if (events.length === 0) {
+            eventSelect.innerHTML = '<option value="">No events available</option>';
+            return;
+        }
+        
+        events.forEach(event => {
+            const option = document.createElement('option');
+            option.value = event.id;
+            option.textContent = `${event.title} - ${new Date(event.date).toLocaleDateString()} (${event.total_tickets} tickets)`;
+            eventSelect.appendChild(option);
+        });
+    } catch (error) {
+        eventSelect.innerHTML = '<option value="">Failed to load events</option>';
+    }
+}
+
 
 // 📊 DASHBOARD FUNCTIONS + NEW EVENT CREATION
 async function loadEvents() {
@@ -305,3 +343,4 @@ document.addEventListener('DOMContentLoaded', function() {
         loadEvents();
     }
 });
+
