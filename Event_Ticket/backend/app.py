@@ -86,7 +86,7 @@ def user_login():
         print(f"❌ User login error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# 👨‍💼 ADMIN LOGIN - ✅ FIXED SYNTAX ERROR
+# 👨‍💼 ADMIN LOGIN
 @app.route('/api/auth/admin-login', methods=['POST'])
 def admin_login():
     try:
@@ -100,7 +100,7 @@ def admin_login():
             token = f'admin-{uuid.uuid4()}'
             print("✅ Admin login successful")
             return jsonify({'token': token}), 200
-        return jsonify({'error': 'Invalid admin credentials'}), 401  # ✅ FIXED: Added missing '
+        return jsonify({'error': 'Invalid admin credentials'}), 401
         
     except Exception as e:
         print(f"❌ Admin login error: {e}")
@@ -153,7 +153,7 @@ def create_event():
         print(f"❌ Create event error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# 🎫 REGISTER TICKETS
+# 🎫 REGISTER TICKETS - ✅ FIXED F-STRING
 @app.route('/api/tickets/register', methods=['POST'])
 def register_tickets():
     client = db.get_client()
@@ -191,7 +191,8 @@ def register_tickets():
         }).eq('id', data['event_id']).execute()
         
         print(f"✅ Registration complete: {data['name']}")
-        return jsonify({'message': f'{tickets} tickets registered for {data["name"]}!"}), 201
+        # ✅ FIXED: No single } at end
+        return jsonify({'message': f'{tickets} tickets registered for {data["name"]}! '}), 201
         
     except Exception as e:
         print(f"❌ Registration error: {e}")
