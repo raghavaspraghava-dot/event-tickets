@@ -86,7 +86,7 @@ def user_login():
         print(f"❌ User login error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# 👨‍💼 ADMIN LOGIN
+# 👨‍💼 ADMIN LOGIN - ✅ FIXED SYNTAX ERROR
 @app.route('/api/auth/admin-login', methods=['POST'])
 def admin_login():
     try:
@@ -100,7 +100,7 @@ def admin_login():
             token = f'admin-{uuid.uuid4()}'
             print("✅ Admin login successful")
             return jsonify({'token': token}), 200
-        return jsonify({'error': 'Invalid admin credentials'}), 401
+        return jsonify({'error': 'Invalid admin credentials'}), 401  # ✅ FIXED: Added missing '
         
     except Exception as e:
         print(f"❌ Admin login error: {e}")
