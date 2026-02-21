@@ -280,16 +280,25 @@ async function loadEvents() {
     }
 }
 
-// ✨ NEW: CREATE EVENT FUNCTION
+// ✨ FIXED CREATE EVENT - Proper Authorization Header
 async function createEvent() {
     const title = document.getElementById('event-title')?.value?.trim();
     const description = document.getElementById('event-description')?.value?.trim();
     const date = document.getElementById('event-date')?.value;
     const tickets = document.getElementById('event-tickets')?.value;
     
+    // VALIDATION
     const validationError = validateEvent(title, description, date, tickets);
     if (validationError) {
         showError('create-event-error', validationError);
+        return;
+    }
+    
+    // ✅ CRITICAL: Get admin token from localStorage
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminToken || !adminToken.startsWith('admin-')) {
+        showError('create-event-error', 'Please login as admin first');
+        redirectTo('admin_login.html');
         return;
     }
     
@@ -297,12 +306,25 @@ async function createEvent() {
     hideError('create-event-error');
     
     try {
-        const token = localStorage.getItem('adminToken');
-        const data = await safeFetch(`${API_BASE}/events`, {
+        const response = await fetch(`${API_BASE}/events`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${adminToken}`  // ✅ FIXED: Token sent correctly
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                date,
+                total_tickets: parseInt(tickets)
+            })
+        });
+        
+        const data = await safeFetch(`${API_BASE}/events`, {  // ✅ Use safeFetch
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
             },
             body: JSON.stringify({
                 title,
@@ -314,33 +336,12 @@ async function createEvent() {
         
         showSuccess('✅ Event created successfully!');
         document.getElementById('event-form').reset();
-        loadEvents(); // Refresh list
+        loadEvents(); // Refresh dashboard
         
     } catch (error) {
-        showError('create-event-error', `Failed to create event: ${error.message}`);
+        showError('create-event-error', `Event creation failed: ${error.message}`);
+        console.error('Create event error:', error);
     }
     
     setLoading('create-event-btn', false);
 }
-
-function logout() {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('userToken');
-    redirectTo('index.html');
-}
-
-function showSuccess(message) {
-    const successDiv = document.createElement('div');
-    successDiv.className = 'success';
-    successDiv.textContent = message;
-    document.querySelector('.container').insertBefore(successDiv, document.querySelector('.container').firstChild);
-    setTimeout(() => successDiv.remove(), 3000);
-}
-
-// PAGE INIT
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.pathname.includes('dashboard.html')) {
-        loadEvents();
-    }
-});
-
