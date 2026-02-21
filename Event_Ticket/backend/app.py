@@ -123,7 +123,7 @@ def get_events():
 
 @app.route('/api/events', methods=['POST'])
 def create_event():
-    """➕ CREATE EVENT - FULL DEBUG VERSION"""
+    """➕ CREATE EVENT - FIXED DEBUG VERSION"""
     try:
         print("\n" + "="*60)
         print("🚀 CREATE EVENT DEBUG START")
@@ -132,7 +132,7 @@ def create_event():
         # 🔍 1. CHECK INCOMING REQUEST
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         print(f"🔍 TOKEN: {token[:30] if token else '❌ MISSING'}...")
-        print(f"📡 HEADERS: Authorization={bool(token)}, Content-Type={request.content_type}")
+        print(f"📡 Content-Type: {request.content_type}")
         
         # 2. VALIDATE ADMIN TOKEN
         if not token or not token.startswith('admin-'):
@@ -177,13 +177,13 @@ def create_event():
         }
         print(f"📤 EVENT TO INSERT: {event}")
         
-        # 7. ATTEMPT DATABASE INSERT
+        # 7. ATTEMPT DATABASE INSERT - ✅ FIXED
         print("🔄 Attempting Supabase INSERT...")
         result = client.table('events').insert(event).execute()
         
-        print(f"✅ SUPABASE RESULT: status_code={result.status_code}")
+        # ✅ CORRECT: Use result.status or check result.data
+        print(f"✅ SUPABASE RESULT: data_length={len(result.data) if result.data else 0}")
         print(f"✅ SUPABASE DATA: {result.data}")
-        print(f"✅ SUPABASE COUNT: {len(result.data) if result.data else 0}")
         
         print("="*60)
         print("✅ EVENT CREATION SUCCESSFUL!")
@@ -192,12 +192,11 @@ def create_event():
         return jsonify({
             'message': 'Event created successfully!',
             'event_id': event_id,
-            'debug_info': 'Check Render logs above'
+            'inserted_rows': len(result.data) if result.data else 0
         }), 201
         
     except KeyError as e:
         print(f"💥 KEY ERROR: {e}")
-        print("Frontend sent wrong field names!")
         return jsonify({'error': f'Missing field: {e}'}), 400
         
     except ValueError as e:
@@ -270,5 +269,6 @@ if __name__ == '__main__':
     print(f"🌐 Supabase: {Config.SUPABASE_URL}")
     print(f"👤 Admin: {Config.ADMIN_EMAIL}")
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
