@@ -121,37 +121,71 @@ def get_events():
         print(f"❌ Events error: {e}")
         return jsonify([]), 200
 
-# ➕ CREATE EVENT (Admin only)
 @app.route('/api/events', methods=['POST'])
 def create_event():
-    token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    if not token or not token.startswith('admin-'):
-        return jsonify({'error': 'Admin required'}), 403
-    
-    client = db.get_client()
-    if not client:
-        return jsonify({'error': 'Database unavailable'}), 503
-    
+    """➕ CREATE EVENT - FULL DEBUG VERSION"""
     try:
-        data = request.get_json()
-        event_id = str(uuid.uuid4())
+        # 🔍 DEBUG: Log everything
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        print(f"🔍 CREATE EVENT REQUEST:")
+        print(f"   Token: {token[:30] if token else 'MISSING'}...")
+        print(f"   Headers: {dict(request.headers)}")
         
+        # Check admin token
+        if not token or not token.startswith('admin-'):
+            print("❌ REJECTED: No valid admin token")
+            return jsonify({'error': 'Admin access required - login again'}), 403
+        
+        client = db.get_client()
+        if not client:
+            print("❌ REJECTED: Database not connected")
+            return jsonify({'error': 'Database unavailable'}), 503
+        
+        print("✅ ADMIN OK + DB OK")
+        
+        # Get request data
+        data = request.get_json()
+        print(f"📥 REQUEST DATA: {data}")
+        
+        if not data:
+            print("❌ REJECTED: No JSON data")
+            return jsonify({'error': 'No data received'}), 400
+        
+        # Validate required fields
+        required = ['title', 'description', 'date', 'total_tickets']
+        for field in required:
+            if not data.get(field):
+                print(f"❌ REJECTED: Missing {field}")
+                return jsonify({'error': f'Missing {field}'}), 400
+        
+        # Create event
+        event_id = str(uuid.uuid4())[:8]  # Short ID for logs
         event = {
             'id': event_id,
-            'title': data['title'],
-            'description': data['description'],
+            'title': data['title'][:50],  # Truncate for logs
+            'description': data['description'][:100],
             'date': data['date'],
-            'total_tickets': int(data['total_tickets']),
-            'created_at': datetime.now().isoformat()
+            'total_tickets': int(data['total_tickets'])
         }
         
-        client.table('events').insert(event).execute()
-        print(f"✅ Event created: {event['title']}")
-        return jsonify({'message': 'Event created!', 'id': event_id}), 201
+        print(f"📤 INSERTING EVENT: {event}")
+        
+        # TRY INSERT
+        result = client.table('events').insert(event).execute()
+        print(f"✅ INSERT RESULT: {result}")
+        print(f"✅ INSERT DATA: {result.data}")
+        
+        return jsonify({
+            'message': 'Event created successfully!', 
+            'event_id': event_id,
+            'debug': 'Check Render logs for details'
+        }), 201
         
     except Exception as e:
-        print(f"❌ Create event error: {e}")
-        return jsonify({'error': str(e)}), 500
+        print(f"💥 FULL ERROR TRACEBACK:")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Event creation failed: {str(e)}'}), 500
+
 
 # 🎫 REGISTER TICKETS - ✅ FIXED F-STRING
 @app.route('/api/tickets/register', methods=['POST'])
@@ -213,3 +247,4 @@ if __name__ == '__main__':
     print(f"🌐 Supabase: {Config.SUPABASE_URL}")
     print(f"👤 Admin: {Config.ADMIN_EMAIL}")
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
