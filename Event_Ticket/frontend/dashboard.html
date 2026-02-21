@@ -10,36 +10,35 @@
     <div class="container">
         <h1>📊 Admin Dashboard</h1>
         
+        <!-- Status Check -->
+        <div class="status" id="admin-status">Checking admin login...</div>
+        
         <!-- Dashboard Stats -->
         <div class="dashboard-header">
-            <button onclick="loadEvents()" class="btn-secondary">
-                🔄 Refresh Events
-            </button>
-            <span id="event-count">Loading...</span>
+            <button onclick="loadEvents()" class="btn-secondary">🔄 Refresh</button>
+            <span id="event-count">0 events</span>
         </div>
         
-        <!-- ✨ NEW EVENT CREATION FORM -->
-        <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;">
-            <h2>➕ Create New Event</h2>
-            <input type="text" id="event-title" placeholder="Event Title">
-            <input type="text" id="event-description" placeholder="Description">
-            <input type="date" id="event-date">
-            <input type="number" id="event-tickets" placeholder="Total Tickets" min="1">
-            <button id="create-event-btn" class="btn-success" onclick="createEvent()">
-                ✨ Create Event
-            </button>
-            <div id="create-event-error" class="error"></div>
-        </div>
+        <!-- ✨ EVENT CREATION FORM -->
+        <form id="event-form">
+            <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin:20px 0;">
+                <h2>➕ Create New Event</h2>
+                <input type="text" id="event-title" placeholder="Event Title *" required>
+                <input type="text" id="event-description" placeholder="Description *" required>
+                <input type="date" id="event-date" required>
+                <input type="number" id="event-tickets" placeholder="Total Tickets *" min="1" value="100" required>
+                <button type="button" id="create-event-btn" class="btn-success" onclick="createEvent()">
+                    ✨ Create Event
+                </button>
+                <div id="create-event-error" class="error"></div>
+            </div>
+        </form>
         
         <!-- Events List -->
-        <h2>📋 Events List</h2>
-        <div id="events-list" class="loading">
-            Loading events...
-        </div>
+        <h2>📋 Events</h2>
+        <div id="events-list" class="loading">Loading events...</div>
         
-        <button onclick="logout()" class="btn-danger">
-            🚪 Logout
-        </button>
+        <button onclick="logout()" class="btn-danger">🚪 Logout</button>
     </div>
     <script src="js/app.js"></script>
 </body>
