@@ -1,14 +1,12 @@
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'supersecret2026-dev-key'
+    # ✅ YOUR REAL CREDENTIALS - ANON KEY (CORRECT)
+    SUPABASE_URL = "https://ydsdpqnhsqiccdsivwek.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlkc2RwcW5oc3FpY2Nkc2l2d2VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDM3NDIsImV4cCI6MjA4NzA3OTc0Mn0.hPTSAVn-e26QYgOmcz2uSO6r89s0QTVdorIkZRBC5Vw"
     
-    # Safe Supabase fallback - will use env vars in production
-    SUPABASE_URL = os.environ.get('SUPABASE_URL') or 'https://dummy.supabase.co'
-    SUPABASE_KEY = os.environ.get('SUPABASE_KEY') or 'dummy-key-for-dev'
+    # Admin credentials
+    ADMIN_EMAIL = "admin@example.com"
+    ADMIN_PASSWORD = "admin123"
     
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    SECRET_KEY = "event-ticket-system-2026"
