@@ -1,61 +1,41 @@
 import supabase
 from config import Config
-import os
+import traceback
+from datetime import datetime
 
-def get_supabase_client():
-    """
-    Initialize and return Supabase client
-    """
-    url = Config.SUPABASE_URL
-    key = Config.SUPABASE_KEY
+class DatabaseManager:
+    def __init__(self):
+        self.client = None
+        self._connect()
     
-    if not url or not key:
-        raise Exception("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
+    def _connect(self):
+        """🔗 Connect using YOUR real credentials"""
+        try:
+            self.client = supabase.create_client(
+                Config.SUPABASE_URL,
+                Config.SUPABASE_KEY
+            )
+            print("✅ Supabase connected with your credentials!")
+            self._test_tables()
+        except Exception as e:
+            print(f"❌ Supabase connection failed: {e}")
+            print(traceback.format_exc())
+            self.client = None
     
-    return supabase.create_client(url, key)
+    def _test_tables(self):
+        """🔍 Verify tables exist"""
+        try:
+            # Test events table
+            self.client.table('events').select('count').limit(1).execute()
+            print("✅ Events table ready")
+        except:
+            print("⚠️  Create tables in Supabase SQL Editor")
+    
+    def get_client(self):
+        return self.client
+    
+    def is_connected(self):
+        return self.client is not None
 
-def init_tables():
-    """
-    Initialize database tables if they don't exist
-    """
-    client = get_supabase_client()
-    
-    # Users table
-    users_table = """
-    CREATE TABLE IF NOT EXISTS users (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    );
-    """
-    
-    # Events table
-    events_table = """
-    CREATE TABLE IF NOT EXISTS events (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        date TIMESTAMP WITH TIME ZONE NOT NULL,
-        total_tickets INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    );
-    """
-    
-    # Registrations table
-    registrations_table = """
-    CREATE TABLE IF NOT EXISTS registrations (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        user_email TEXT NOT NULL,
-        event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-        tickets INTEGER NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    );
-    """
-    
-    # Enable RLS (Row Level Security) - disabled for simplicity in this demo
-    client.rpc('execute_sql', {'sql': users_table})
-    client.rpc('execute_sql', {'sql': events_table})
-    client.rpc('execute_sql', {'sql': registrations_table})
-    
-    print("Tables initialized successfully!")
+# Global database instance
+db = DatabaseManager()
